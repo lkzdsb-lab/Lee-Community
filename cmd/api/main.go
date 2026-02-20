@@ -19,7 +19,11 @@ func main() {
 	}
 
 	// 自动建表（开发阶段 OK）
-	mysql.DB.AutoMigrate(&model.User{})
+	mysql.DB.AutoMigrate(
+		&model.User{},
+		&model.Community{},
+		&model.CommunityMember{},
+	)
 
 	// Gin
 	r := router.InitRouter()

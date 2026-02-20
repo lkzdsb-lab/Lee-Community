@@ -22,6 +22,7 @@ func InitRouter() *gin.Engine {
 
 	user := handler.NewUserHandler()
 	email := handler.NewEmailHandler(emailCfg)
+	community := handler.NewCommunityHandler()
 
 	// 邮件相关接口
 	emailGroup := r.Group("/api/email")
@@ -49,6 +50,16 @@ func InitRouter() *gin.Engine {
 	authGroup.Use(middleware.AuthMiddleware())
 	{
 		authGroup.POST("/change-password", user.ChangePassword)
+	}
+
+	// 社区相关接口
+	communityGroup := r.Group("/api/community")
+	communityGroup.Use(middleware.AuthMiddleware())
+	{
+		communityGroup.POST("/create", community.Create)
+		communityGroup.POST("/join", community.Join)
+		communityGroup.POST("/leave", community.Leave)
+		communityGroup.GET("/list", community.List)
 	}
 
 	return r
