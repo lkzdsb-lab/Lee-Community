@@ -23,6 +23,7 @@ func main() {
 		&model.User{},
 		&model.Community{},
 		&model.CommunityMember{},
+		&model.Post{},
 	)
 
 	// Gin

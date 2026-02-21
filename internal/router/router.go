@@ -23,6 +23,7 @@ func InitRouter() *gin.Engine {
 	user := handler.NewUserHandler()
 	email := handler.NewEmailHandler(emailCfg)
 	community := handler.NewCommunityHandler()
+	post := handler.NewPostHandler()
 
 	// 邮件相关接口
 	emailGroup := r.Group("/api/email")
@@ -60,6 +61,15 @@ func InitRouter() *gin.Engine {
 		communityGroup.POST("/join", community.Join)
 		communityGroup.POST("/leave", community.Leave)
 		communityGroup.GET("/list", community.List)
+	}
+
+	// 帖子相关接口
+	postGroup := r.Group("/api/post")
+	postGroup.Use(middleware.AuthMiddleware())
+	{
+		postGroup.POST("/create", post.CreatePost)
+		postGroup.DELETE("/:id", post.DeletePost)
+		postGroup.GET("/list/:id", post.ListByCommunity)
 	}
 
 	return r
