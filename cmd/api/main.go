@@ -5,6 +5,10 @@ import (
 	"Lee_Community/internal/repository/mysql"
 	"Lee_Community/internal/repository/redis"
 	"Lee_Community/internal/router"
+	"Lee_Community/internal/service"
+	"context"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -24,10 +28,21 @@ func main() {
 		&model.Community{},
 		&model.CommunityMember{},
 		&model.Post{},
+		&model.Follow{},
+		&model.SocialOutbox{},
 	)
 
 	// Gin
 	r := router.InitRouter()
+
+	// 启动 OutboxRelayer and FollowCountReconciler
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+	relayer := service.NewOutboxRelayer(service.LogSender)
+	go relayer.Run(ctx)
+	reconciler := service.NewFollowCountReconciler()
+	go reconciler.ReconcilerRun(ctx)
+
 	err := r.Run(":8080")
 	if err != nil {
 		return
