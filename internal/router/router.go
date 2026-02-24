@@ -20,11 +20,13 @@ func InitRouter() *gin.Engine {
 		From:     "NoReply <no-reply@example.com>",
 	}
 
+	var vipThreshold int64 = 10000
+
 	user := handler.NewUserHandler()
 	email := handler.NewEmailHandler(emailCfg)
 	community := handler.NewCommunityHandler()
 	post := handler.NewPostHandler()
-	follow := handler.NewFollowHandler()
+	follow := handler.NewFollowHandler(vipThreshold)
 
 	// 邮件相关接口
 	emailGroup := r.Group("/api/email")

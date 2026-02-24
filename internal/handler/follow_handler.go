@@ -13,8 +13,8 @@ type FollowHandler struct {
 	svc *service.FollowService
 }
 
-func NewFollowHandler() *FollowHandler {
-	return &FollowHandler{svc: service.NewFollowService()}
+func NewFollowHandler(vipThreshold int64) *FollowHandler {
+	return &FollowHandler{svc: service.NewFollowService(vipThreshold)}
 }
 
 type followReq struct {

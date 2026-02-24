@@ -24,6 +24,10 @@ type FollowCountReconcilerRepo struct {
 	DB *gorm.DB
 }
 
+type VIPMarkerRepo struct {
+	DB *gorm.DB
+}
+
 // Pair 对账消息结构体
 type Pair struct {
 	ID             uint64
@@ -222,17 +226,23 @@ func (r *OutboxRepository) SuccessUpdate(ctx context.Context, id uint64) error {
 		Update("status", 1).Error
 }
 
-// ReconcileList 异步修正批量查询
-func (r *FollowCountReconcilerRepo) ReconcileList(ctx context.Context, batchSize int) ([]Pair, error) {
+// ReconcileList 异步对账用户批量查询
+func (r *FollowCountReconcilerRepo) ReconcileList(ctx context.Context, batchSize int, lastID uint64) ([]Pair, uint64, error) {
 	var list []Pair
 	if err := r.DB.WithContext(ctx).Model(&model.User{}).
 		Select("id", "following_count", "follower_count").
+		Where("id > ?", lastID).
 		Order("id ASC").
 		Limit(batchSize).
 		Find(&list).Error; err != nil {
-		return nil, err
+		return nil, lastID, err
 	}
-	return list, nil
+	if len(list) == 0 {
+		// 如果结果为空
+		return nil, lastID, nil
+	}
+	// 正常批次
+	return list, list[len(list)-1].ID, nil
 }
 
 // RealFollowers 真实粉丝数量查询
@@ -269,4 +279,22 @@ func (r *FollowCountReconcilerRepo) ReconcileFollowers(ctx context.Context, user
 func (r *FollowCountReconcilerRepo) ReconcileFollowings(ctx context.Context, userID uint64, realFollower int64) error {
 	return r.DB.WithContext(ctx).Model(&model.User{}).Where("id=?", userID).
 		UpdateColumn("follower_count", realFollower).Error
+}
+
+// GetUser 获取需要标记的用户
+func (m *VIPMarkerRepo) GetUser(ctx context.Context, userID uint64) (model.User, error) {
+	var user model.User
+	if err := m.DB.WithContext(ctx).
+		Select("id, ", "is_vip", "follower_count").
+		Where("id=?", userID).
+		First(&user).Error; err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+// UpdateUser 更新用户信息为大v用户
+func (m *VIPMarkerRepo) UpdateUser(ctx context.Context, userID uint64, isVip bool) error {
+	return m.DB.WithContext(ctx).Model(&model.User{}).Where("id=?", userID).
+		Update("is_vip", isVip).Error
 }
