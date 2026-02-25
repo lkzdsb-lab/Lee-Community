@@ -27,6 +27,7 @@ func InitRouter() *gin.Engine {
 	community := handler.NewCommunityHandler()
 	post := handler.NewPostHandler()
 	follow := handler.NewFollowHandler(vipThreshold)
+	postlike := handler.NewPostLikeHandler()
 
 	// 邮件相关接口
 	emailGroup := r.Group("/api/email")
@@ -43,10 +44,11 @@ func InitRouter() *gin.Engine {
 		userGroup.POST("/reset", user.ResetPassword)
 	}
 
-	// token相关接口
-	tokenGroup := r.Group("/api/token")
+	// 公开相关接口
+	publicGroup := r.Group("/api/public")
 	{
-		tokenGroup.POST("/refresh", user.TokenRefresh)
+		publicGroup.POST("/refresh", user.TokenRefresh)
+		publicGroup.GET("/post/:id/like/count", postlike.Count)
 	}
 
 	// 登录态接口
@@ -83,6 +85,15 @@ func InitRouter() *gin.Engine {
 		FollowGroup.GET("/followings", follow.ListFollowings)
 		FollowGroup.GET("/followers", follow.ListFollowers)
 		FollowGroup.GET("/relation", follow.Relation)
+	}
+
+	// 帖子点赞接口
+	PostLikeGroup := r.Group("/api/postlike")
+	PostLikeGroup.Use(middleware.AuthMiddleware())
+	{
+		PostLikeGroup.POST("/:id/like", postlike.Like)
+		PostLikeGroup.POST("/:id/unlike", postlike.Unlike)
+		PostLikeGroup.GET("/:id/is-liked", postlike.IsLiked)
 	}
 
 	return r
